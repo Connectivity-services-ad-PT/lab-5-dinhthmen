@@ -1,0 +1,224 @@
+{
+  "info": {
+    "name": "FIT4110 Lab05 Compose Readiness",
+    "description": "End-to-end checks for the Lab 05 Docker Compose stack.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01_Readiness",
+      "item": [
+        {
+          "name": "GET API health returns 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('API health is ok', function () { const json = pm.response.json(); pm.expect(json.status).to.eql('ok'); pm.expect(json.service).to.eql('iot-ingestion'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET API readiness sees DB and AI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/readiness"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('DB and AI are ready', function () { const json = pm.response.json(); pm.expect(json.status).to.eql('ok'); pm.expect(json.db).to.eql('ready'); pm.expect(json.ai).to.eql('ready'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET AI health returns 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{aiBaseUrl}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('AI health is ok', function () { const json = pm.response.json(); pm.expect(json.status).to.eql('ok'); pm.expect(json.service).to.eql('ai-service'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02_Functional",
+      "item": [
+        {
+          "name": "POST valid reading returns 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/readings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_id\": \"ESP32-LAB-A01\",\n  \"metric\": \"temperature\",\n  \"value\": 31.5,\n  \"unit\": \"celsius\",\n  \"timestamp\": \"2026-05-13T08:30:00+07:00\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Created reading has id', function () { const json = pm.response.json(); pm.expect(json.reading_id).to.match(/^R-[0-9]{8}-[0-9]{4}$/); pm.environment.set('createdReadingId', json.reading_id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET latest readings returns items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/readings/latest?limit=5"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has items array', function () { const json = pm.response.json(); pm.expect(json.items).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST AI predict returns objects",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{aiBaseUrl}}/predict"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('AI returns predictions', function () { const json = pm.response.json(); pm.expect(json.objects).to.be.an('array'); pm.expect(json.confidence).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03_Auth_Negative_Boundary",
+      "item": [
+        {
+          "name": "POST reading without token returns 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/readings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_id\": \"ESP32-LAB-A01\",\n  \"metric\": \"temperature\",\n  \"value\": 31.5,\n  \"unit\": \"celsius\",\n  \"timestamp\": \"2026-05-13T08:30:00+07:00\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('ProblemDetails shape', function () { const json = pm.response.json(); pm.expect(json.status).to.eql(401); pm.expect(json).to.have.property('detail'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST temperature 81 returns 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/readings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_id\": \"ESP32-LAB-A01\",\n  \"metric\": \"temperature\",\n  \"value\": 81,\n  \"unit\": \"celsius\",\n  \"timestamp\": \"2026-05-13T08:30:00+07:00\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 422', function () { pm.response.to.have.status(422); });",
+                  "pm.test('ProblemDetails shape', function () { const json = pm.response.json(); pm.expect(json.status).to.eql(422); pm.expect(json).to.have.property('detail'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

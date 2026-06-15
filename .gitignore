@@ -1,0 +1,15 @@
+node_modules/
+.venv/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.DS_Store
+prism.log
+*.log
+reports/*
+!reports/
+!reports/.gitkeep
+!reports/newman-lab05-compose.xml
+!reports/newman-lab05-compose.html

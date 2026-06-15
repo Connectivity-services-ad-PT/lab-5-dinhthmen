@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="FIT4110 Lab05 Compose Readiness" tests="8" time="0.084">
+  <testsuite name="01_Readiness / GET API health returns 200" id="c8b63620-c969-43f9-b269-772c45f562de" timestamp="2026-06-15T07:46:14.128Z" tests="2" failures="0" errors="0" time="0.028">
+    <testcase name="Status code is 200" time="0.028" classname="01ReadinessGetApiHealthReturns200"/>
+    <testcase name="API health is ok" time="0.028" classname="01ReadinessGetApiHealthReturns200"/>
+  </testsuite>
+  <testsuite name="01_Readiness / GET API readiness sees DB and AI" id="0a83e609-0f8d-4890-ae05-aa8d4719b3f8" timestamp="2026-06-15T07:46:14.128Z" tests="2" failures="0" errors="0" time="0.017">
+    <testcase name="Status code is 200" time="0.017" classname="01ReadinessGetApiReadinessSeesDbAndAi"/>
+    <testcase name="DB and AI are ready" time="0.017" classname="01ReadinessGetApiReadinessSeesDbAndAi"/>
+  </testsuite>
+  <testsuite name="01_Readiness / GET AI health returns 200" id="bd1ea440-a79f-46e0-8cc2-cc045f23669e" timestamp="2026-06-15T07:46:14.128Z" tests="2" failures="0" errors="0" time="0.008">
+    <testcase name="Status code is 200" time="0.008" classname="01ReadinessGetAiHealthReturns200"/>
+    <testcase name="AI health is ok" time="0.008" classname="01ReadinessGetAiHealthReturns200"/>
+  </testsuite>
+  <testsuite name="02_Functional / POST valid reading returns 201" id="50f74d9d-1d11-4fbe-940e-8b200ce8acc5" timestamp="2026-06-15T07:46:14.128Z" tests="2" failures="0" errors="0" time="0.011">
+    <testcase name="Status code is 201" time="0.011" classname="02FunctionalPostValidReadingReturns201"/>
+    <testcase name="Created reading has id" time="0.011" classname="02FunctionalPostValidReadingReturns201"/>
+  </testsuite>
+  <testsuite name="02_Functional / GET latest readings returns items" id="689a0f60-4566-4a07-a6f0-6d9f73fb8166" timestamp="2026-06-15T07:46:14.128Z" tests="2" failures="0" errors="0" time="0.006">
+    <testcase name="Status code is 200" time="0.006" classname="02FunctionalGetLatestReadingsReturnsItems"/>
+    <testcase name="Response has items array" time="0.006" classname="02FunctionalGetLatestReadingsReturnsItems"/>
+  </testsuite>
+  <testsuite name="02_Functional / POST AI predict returns objects" id="753532da-a20d-4fc5-9e41-3c21b6064c30" timestamp="2026-06-15T07:46:14.128Z" tests="2" failures="0" errors="0" time="0.004">
+    <testcase name="Status code is 200" time="0.004" classname="02FunctionalPostAiPredictReturnsObjects"/>
+    <testcase name="AI returns predictions" time="0.004" classname="02FunctionalPostAiPredictReturnsObjects"/>
+  </testsuite>
+  <testsuite name="03_Auth_Negative_Boundary / POST reading without token returns 401" id="675f5049-9574-4c41-96bc-5409c5fd7cf4" timestamp="2026-06-15T07:46:14.128Z" tests="2" failures="0" errors="0" time="0.005">
+    <testcase name="Status code is 401" time="0.005" classname="03AuthNegativeBoundaryPostReadingWithoutTokenReturns401"/>
+    <testcase name="ProblemDetails shape" time="0.005" classname="03AuthNegativeBoundaryPostReadingWithoutTokenReturns401"/>
+  </testsuite>
+  <testsuite name="03_Auth_Negative_Boundary / POST temperature 81 returns 422" id="6d069eac-5698-4eb1-9e5c-6439032a5c19" timestamp="2026-06-15T07:46:14.128Z" tests="2" failures="0" errors="0" time="0.005">
+    <testcase name="Status code is 422" time="0.005" classname="03AuthNegativeBoundaryPostTemperature81Returns422"/>
+    <testcase name="ProblemDetails shape" time="0.005" classname="03AuthNegativeBoundaryPostTemperature81Returns422"/>
+  </testsuite>
+</testsuites>

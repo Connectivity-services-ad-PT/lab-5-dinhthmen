@@ -1,6 +1,9 @@
 import os
+import socket
+import urllib.request
 from datetime import datetime, timezone
 from enum import Enum
+from http import HTTPStatus
 from typing import Dict, List, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response, status
@@ -12,6 +15,9 @@ from pydantic import BaseModel, Field
 SERVICE_NAME = os.getenv("SERVICE_NAME", "iot-ingestion")
 SERVICE_VERSION = os.getenv("SERVICE_VERSION", "0.5.0")
 AUTH_TOKEN = os.getenv("AUTH_TOKEN", "local-dev-token")
+AI_BASE_URL = os.getenv("AI_BASE_URL", "http://ai-service:9000")
+DB_HOST = os.getenv("DB_HOST", "db")
+DB_PORT = int(os.getenv("DB_PORT", "5432"))
 
 
 app = FastAPI(
@@ -49,6 +55,14 @@ class ProblemDetails(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     service: str
+    version: str
+
+
+class ReadinessResponse(BaseModel):
+    status: str
+    service: str
+    db: str
+    ai: str
     version: str
 
 
@@ -106,6 +120,13 @@ def build_problem(
     return problem
 
 
+def reason_phrase(status_code: int) -> str:
+    try:
+        return HTTPStatus(status_code).phrase
+    except ValueError:
+        return "HTTP Error"
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     if isinstance(exc.detail, dict):
@@ -113,13 +134,13 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     else:
         problem = build_problem(
             status_code=exc.status_code,
-            title=status.HTTP_STATUS_CODES.get(exc.status_code, "HTTP Error"),
+            title=reason_phrase(exc.status_code),
             detail=str(exc.detail),
             instance=str(request.url.path),
         )
 
     problem.setdefault("status", exc.status_code)
-    problem.setdefault("title", status.HTTP_STATUS_CODES.get(exc.status_code, "HTTP Error"))
+    problem.setdefault("title", reason_phrase(exc.status_code))
     problem.setdefault("type", "about:blank")
     problem.setdefault("detail", "Request failed")
     problem.setdefault("instance", str(request.url.path))
@@ -188,11 +209,40 @@ def next_reading_id() -> str:
     return f"R-{today}-{len(READINGS) + 1:04d}"
 
 
+def check_db_ready() -> bool:
+    try:
+        with socket.create_connection((DB_HOST, DB_PORT), timeout=2):
+            return True
+    except OSError:
+        return False
+
+
+def check_ai_ready() -> bool:
+    try:
+        with urllib.request.urlopen(f"{AI_BASE_URL}/health", timeout=2) as response:
+            return response.status == 200
+    except Exception:
+        return False
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(
         status="ok",
         service=SERVICE_NAME,
+        version=SERVICE_VERSION,
+    )
+
+
+@app.get("/readiness", response_model=ReadinessResponse)
+def readiness() -> ReadinessResponse:
+    db_ready = check_db_ready()
+    ai_ready = check_ai_ready()
+    return ReadinessResponse(
+        status="ok" if db_ready and ai_ready else "degraded",
+        service=SERVICE_NAME,
+        db="ready" if db_ready else "unavailable",
+        ai="ready" if ai_ready else "unavailable",
         version=SERVICE_VERSION,
     )
 
